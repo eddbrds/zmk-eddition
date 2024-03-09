@@ -126,9 +126,15 @@ void activity_work_handler(struct k_work *work) {
     int32_t current = k_uptime_get();
     int32_t inactive_time = current - activity_last_uptime;
 #if IS_ENABLED(CONFIG_ZMK_SLEEP)
+
+    if (inactive_time > MAX_SLEEP_MS && !is_usb_power_present()) {
+        // Put devices in suspend power mode before sleeping
+        set_state(ZMK_ACTIVITY_SLEEP);
+        
     if (inactive_time > MAX_SLEEP_MS && !zmk_ble_active_profile_is_connected()) {
         // Put devices in suspend power mode before sleeping
         set_state(ZMK_ACTIVITY_SLEEP);
+        
         pm_state_force(0U, &struct pm_state_info){PM_STATE_SOFT_OFF, 0, 0};
         
         if (zmk_pm_suspend_devices() < 0) {
